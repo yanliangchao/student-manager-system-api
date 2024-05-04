@@ -1,51 +1,35 @@
-
-const postgres = require('postgres');
-
-require('dotenv').config();
-
-
-
-let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
-
-
-
-const sql = postgres({
-
-    host: PGHOST,
-    database: PGDATABASE,
-    username: PGUSER,
-    password: PGPASSWORD,
-    port: 5432,
-    ssl: 'require',
-
-});
-
-
-
-async function getPgVersion() {
-    const result = await sql`select version()`;
-    console.log(result[0].version);
-    return result[0].version
-}
-
-
-
 const express = require('express')
-const app = express();
+const cors = require('cors')
+const bodyParser = require('body-parser')
+const jwt = require("./jwt/index");
 
-// 端口
-const port = 8080
+const app = express()
+app.use(cors())
+app.use(express.urlencoded({extended: false}))
+app.use(bodyParser.json())
 
-app.use(express.json())
+const authRouter = require('./router/auth')
+const userRouter = require('./router/user')
+const schoolRouter = require('./router/school')
+const subjectRouter = require('./router/subject')
+const teacherRouter = require('./router/teacher')
+const classRouter = require('./router/class')
+const dormitoryRouter = require('./router/dormitory')
+const studentRouter = require('./router/student')
+const detailsRouter = require('./router/details')
+
+app.use('/api/auth', authRouter)
+app.use('/api/user', jwt.verify, userRouter)
+app.use('/api/school', jwt.verify, schoolRouter)
+app.use('/api/subject', jwt.verify, subjectRouter)
+app.use('/api/teacher', jwt.verify, teacherRouter)
+app.use('/api/class', jwt.verify, classRouter)
+app.use('/api/dormitory', jwt.verify, dormitoryRouter)
+app.use('/api/student', jwt.verify, studentRouter)
+app.use('/api/details', jwt.verify, detailsRouter)
 
 
-app.get('/', async (req, res) => {
-    let version = await getPgVersion()
-    console.log(version)
-    res.send(version)
-})
 
-
-app.listen(port, () => {
-    console.log(`Node服务已启动，端口为：${port}`)
+app.listen(3021, () => {
+    console.log('api server running at http://127.0.0.1:3021')
 })
