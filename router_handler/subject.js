@@ -41,7 +41,7 @@ exports.list = async (req, res) => {
     try {
         const user = await jwt.decode(req)
         let result;
-        const sql2 = "select * from t_subject order by id desc";
+        const sql2 = "select * from t_subject order by id asc";
         const response = await db.query(sql2);
         result = response.rows;
 

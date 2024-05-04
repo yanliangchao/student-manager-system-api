@@ -43,7 +43,6 @@ const decode = async (req) => {
     try {
       const response = await db.query(sql, [username]);
 	  const results = response.rows
-	  console.log(results)
       if (results.length !== 1) return null;
 	  return results[0]
 	} catch(err) {

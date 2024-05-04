@@ -121,8 +121,10 @@ exports.mod = async (req, res) => {
 exports.del = async (req, res) => {
     try {
         const id = req.params.id
-        const sql = "delete from t_student where id =$1";
-        await db.query(sql, [id]);
+        const sql1 = "delete from t_student where id =$1";
+        await db.query(sql1, [id]);
+        const sql2 = "delete from t_student_details where sid =$1";
+        await db.query(sql2, [id]);
         res.json({
             status: 200,
             message: "删除成功",

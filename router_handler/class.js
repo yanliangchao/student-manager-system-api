@@ -58,7 +58,7 @@ exports.list = async (req, res) => {
     try {
         const user = await jwt.decode(req)
         let result;
-        const sql2 = `select tcs.id, tcs.class_id, tcs.class_name, ttc.id, ttc.name, tsc.id, tsc.school_name from t_class tcs 
+        const sql2 = `select tcs.id, tcs.class_id, tcs.class_name, ttc.id tid, ttc.name, tsc.id sid, tsc.school_name from t_class tcs 
                         left join t_teacher ttc on tcs.tid = ttc.id 
                         left join t_school tsc on tcs.sid = tsc.id 
                         left join t_user_school tusc on tsc.id = tusc.sid 

@@ -122,21 +122,18 @@ exports.mod = async (req, res) => {
     try {
         const teacher = req.body
         console.log(teacher)
-        const sql1 = "update t_teacher set name = $1, level = $2, sid = $3 where id = $4";
-        const response = await db.query(sql1, [teacher.name, teacher.level, teacher.school.id, teacher.id]);
+        const sql1 = "update t_teacher set name = $1, iphone = $2, level = $3, sid = $4 where id = $5";
+        await db.query(sql1, [teacher.name, teacher.iphone, teacher.level, teacher.sid, teacher.id]);
 
         // 修改中间表  --> 删除再新增
         const sql2 = `delete from t_teacher_subject where tid = $1`
         await db.query(sql2, [teacher.id]);
 
         const subjects = teacher.subjects;
-        subjects.array.forEach(async subject => {
+        for (const sid of subjects) {
             const sql2 = "insert into t_teacher_subject (tid, sid) values ($1, $2)"
-            await db.query(sql2, [tid, subject.id]);
-        });
-
-        
-        
+            await db.query(sql2, [teacher.id, sid]);
+        }
         res.json({
             status: 200,
             message: "修改成功",
