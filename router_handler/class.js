@@ -41,6 +41,17 @@ exports.page = async (req, res) => {
             const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
             result = response.rows;
         }
+        for (const clazz of result) {
+            // 查询clazz中学生的数量
+            const sql3 = `select count(*) from t_student tsd where tsd.cid = $1`;
+            const stuCount = await db.query(sql3, [clazz.id])
+            clazz.sidCount = stuCount.rows[0].count
+
+            // 查询clazz中老师的数量
+            const sql4 = `select count(*) from t_class_teacher_subject tcts where tcts.cid = $1`;
+            const teaCount = await db.query(sql4, [clazz.id])
+            clazz.tidCount = teaCount.rows[0].count
+        }
         res.json({
             status: 200,
             message: "查询成功",
@@ -76,10 +87,30 @@ exports.list = async (req, res) => {
     }
 };
 
+exports.getSubTecById =async (req, res) => {
+    try {
+        const id = req.params.id
+        let result;
+        const sql2 = `select ttc.id tid, ttc.name, ttc.level, ttc.iphone, tsj.id sid, tsj.name subject from t_class_teacher_subject tcts 
+                        left join t_teacher ttc on ttc.id = tcts.tid
+                        left join t_subject tsj on tsj.id = tcts.sid
+                        where tcts.cid = $1`;
+        const response = await db.query(sql2, [id]);
+        result = response.rows;
+
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: result,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
+
 exports.add = async (req, res) => {
     try {
         const clazz = req.body
-        console.log(clazz)
         //const user = await jwt.decode(req)
         const sql1 = "insert into t_class (class_id, class_name, tid, sid) values ($1, $2, $3, $4) RETURNING id";
         const response = await db.query(sql1, [clazz.class_id, clazz.class_name, clazz.tid, clazz.sid]);
@@ -99,10 +130,29 @@ exports.add = async (req, res) => {
     }
 };
 
+exports.addSubTec = async (req, res) => {
+    try {
+        const row = req.body
+        //const user = await jwt.decode(req)
+        const sql1 = "insert into t_class_teacher_subject (cid, tid, sid) values ($1, $2, $3)";
+        await db.query(sql1, [row.cid, row.tid, row.sid]);
+        // const sql2 = "insert into t_user_class (uid, sid) values ($1, $2)";
+        // if(user.id != 1) {
+        //     await db.query(sql2, [1, sid]);
+        // } 
+        //await db.query(sql2, [user.id, sid]);
+        res.json({
+            status: 200,
+            message: "新增成功",
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}
+
 exports.mod = async (req, res) => {
     try {
         const clazz = req.body
-        console.log(clazz)
         const sql = "update t_class set class_id = $1, class_name = $2, tid = $3, sid = $4 where id = $5";
         const response = await db.query(sql, [clazz.class_id, clazz.class_name, clazz.tid, clazz.sid, clazz.id]);
         console.log(response)
@@ -119,8 +169,24 @@ exports.mod = async (req, res) => {
 exports.del = async (req, res) => {
     try {
         const id = req.params.id
-        const sql = "delete from t_class where id =$1";
-        await db.query(sql, [id]);
+        const sql1 = "delete from t_class where id =$1";
+        await db.query(sql1, [id]);
+        const sql2 = "delete from t_class_teacher_subject where tid =$1";
+        await db.query(sql2, [id]);
+        res.json({
+            status: 200,
+            message: "删除成功",
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
+
+exports.delSubTec = async (req, res) => {
+    try {
+        const row = req.body
+        const sql2 = "delete from t_class_teacher_subject where cid = $1 and tid =$2 and sid = $3";
+        await db.query(sql2, [row.cid, row.tid, row.sid]);
         res.json({
             status: 200,
             message: "删除成功",

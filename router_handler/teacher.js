@@ -11,24 +11,22 @@ exports.page = async (req, res) => {
         let result;
         if (requestParams.search) {
             const sql1 = `select count(*) from (select distinct ttc.* from t_teacher ttc 
-                                left join t_teacher_subject ttcs on ttc.id = ttcs.tid left join t_subject tsj on tsj.id = ttcs.sid 
-                                left join t_class_teacher tctc on ttc.id = tctc.tid left join t_class tcs on tcs.id = tctc.cid
                                 left join t_school tsc on ttc.sid = tsc.id 
                                 left join t_user_school tusc on tsc.id = tusc.sid 
-                                where tusc.uid = $1 and (ttc.name like $2 or ttc.level like $2 or tsj.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2))`;
+                                where tusc.uid = $1 and (ttc.name like $2 or ttc.level like $2 or tsc.school_name like $2))`;
             const countResponse = await db.query(sql1, [user.id, "%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
             const sql2 = `select distinct ttc.id, ttc.name, ttc.iphone, ttc.level, tsc.id sid, tsc.school_name from t_teacher ttc 
-                            left join t_teacher_subject ttcs on ttc.id = ttcs.tid left join t_subject tsj on tsj.id = ttcs.sid 
-                            left join t_class_teacher tctc on ttc.id = tctc.tid left join t_class tcs on tcs.id = tctc.cid
-                            left join t_school tsc on ttc.sid = tsc.id left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (ttc.name like $2 or ttc.level like $2 or tsj.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)
+                            left join t_school tsc on ttc.sid = tsc.id 
+                            left join t_user_school tusc on tsc.id = tusc.sid 
+                            where tusc.uid = $1 and (ttc.name like $2 or ttc.level like $2 or tsc.school_name like $2)
                             order by id desc limit $3 offset $4`;
             const response = await db.query(sql2, [user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
         } else {
             const sql1 = `select count(*) from t_teacher ttc 
-                            left join t_school tsc on ttc.sid = tsc.id left join t_user_school tusc on tsc.id = tusc.sid 
+                            left join t_school tsc on ttc.sid = tsc.id 
+                            left join t_user_school tusc on tsc.id = tusc.sid 
                             where tusc.uid = $1`;
             const countResponse = await db.query(sql1, [user.id])
 
@@ -39,7 +37,7 @@ exports.page = async (req, res) => {
             const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
             result = response.rows;
         }
-       
+        //console.log(result)
         // 查询result的 JOIN 值，
         for (const row of result) {
             // 查询是班主任的班级，
@@ -48,17 +46,18 @@ exports.page = async (req, res) => {
             row.class_teacher = class_teacher.rows
 
             // 查询教的班级的班级，
-            const sql4 = `select tcs.* from t_class tcs left join t_class_teacher tctc on tcs.id = tctc.cid  where tctc.tid = $1`
-            const clazz = await db.query(sql4, [row.id])
-            row.class = clazz.rows
+            // const sql4 = `select tcs.* from t_class tcs left join t_class_teacher tctc on tcs.id = tctc.cid  where tctc.tid = $1`
+            // const clazz = await db.query(sql4, [row.id])
+            // row.class = clazz.rows
 
             // 查询教的科目
-            const sql5 = `select tsj.* from t_subject tsj left join t_teacher_subject ttcs on tsj.id = ttcs.sid where ttcs.tid = $1`
+            const sql5 = `select tcs.id cid, tcs.class_id, tcs.class_name, tsj.id sid, tsj.name subject from t_class_teacher_subject tcts 
+                            left join t_class tcs on tcs.id = tcts.cid 
+                            left join t_subject tsj on tsj.id = tcts.sid 
+                            where tcts.tid = $1`
             const subject = await db.query(sql5, [row.id])
-            row.subjects = subject.rows
+            row.class = subject.rows
         }
-
-        //console.log(result)
 
         res.json({
             status: 200,
@@ -77,9 +76,7 @@ exports.list = async (req, res) => {
     try {
         const user = await jwt.decode(req)
         let result;
-        const sql2 = `select ttc.id, ttc.name teacher_name, ttc.level, tsj.id tsj_id, tsj.name tsj_name, tcs.id tcs_id, tcs.class_id, tcs.class_name, tsc.school_name from t_teacher ttc 
-                        left join t_teacher_subject ttcs on ttc.id = ttcs.tid left join t_subject tsj on tsj.id = ttcs.sid 
-                        left join t_class_teacher tctc on ttc.id = tctc.tid left join t_class tcs on tcs.id = tctc.cid
+        const sql2 = `select ttc.id, ttc.name teacher_name, ttc.level, tsc.school_name from t_teacher ttc 
                         left join t_school tsc on ttc.sid = tsc.id left join t_user_school tusc on tsc.id = tusc.sid 
                         where tusc.uid = $1 order by id desc`;
         const response = await db.query(sql2, [user.id]);
@@ -104,10 +101,10 @@ exports.add = async (req, res) => {
         const sql1 = "insert into t_teacher (name, iphone, level, sid) values ($1, $2, $3, $4) RETURNING id";
         const response = await db.query(sql1, [teacher.name, teacher.iphone, teacher.level, teacher.sid]);
         const tid = response.rows[0].id
-        for(const sid of subjects) {
-            const sql2 = "insert into t_teacher_subject (tid, sid) values ($1, $2)"
-            await db.query(sql2, [tid, sid]);
-        }
+        // for(const sid of subjects) {
+        //     const sql2 = "insert into t_teacher_subject (tid, sid) values ($1, $2)"
+        //     await db.query(sql2, [tid, sid]);
+        // }
         res.json({
             status: 200,
             message: "新增成功",
@@ -126,14 +123,14 @@ exports.mod = async (req, res) => {
         await db.query(sql1, [teacher.name, teacher.iphone, teacher.level, teacher.sid, teacher.id]);
 
         // 修改中间表  --> 删除再新增
-        const sql2 = `delete from t_teacher_subject where tid = $1`
-        await db.query(sql2, [teacher.id]);
+        // const sql2 = `delete from t_teacher_subject where tid = $1`
+        // await db.query(sql2, [teacher.id]);
 
-        const subjects = teacher.subjects;
-        for (const sid of subjects) {
-            const sql2 = "insert into t_teacher_subject (tid, sid) values ($1, $2)"
-            await db.query(sql2, [teacher.id, sid]);
-        }
+        // const subjects = teacher.subjects;
+        // for (const sid of subjects) {
+        //     const sql2 = "insert into t_teacher_subject (tid, sid) values ($1, $2)"
+        //     await db.query(sql2, [teacher.id, sid]);
+        // }
         res.json({
             status: 200,
             message: "修改成功",
@@ -149,7 +146,7 @@ exports.del = async (req, res) => {
         const sql1 = "delete from t_teacher where id =$1";
         await db.query(sql1, [id]);
 
-        const sql2 = "delete from t_teacher_subject where tid =$1";
+        const sql2 = "delete from t_class_teacher_subject where tid =$1";
         await db.query(sql2, [id]);
         res.json({
             status: 200,

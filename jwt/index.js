@@ -5,7 +5,7 @@ const db = require("../db/index");
 // 生成token
 const sign = (data={}) => {
 	return jwt.sign(data, config.jwtSecretKey, {
-		expiresIn: 60*60,
+		expiresIn: 12*60*60,
 	});
 };
 
