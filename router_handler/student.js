@@ -50,6 +50,12 @@ exports.page = async (req, res) => {
             const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
             result = response.rows;
         }
+        for (const student of result) {
+            // 查询主课科目
+            const sql5 = `select tsb.id, tsb.name from t_class_teacher_subject tcts left join t_subject tsb on tcts.sid = tsb.id where tcts.cid = $1 and tcts.master = '1'`;
+            const subjects = await db.query(sql5, [student.cid])
+            student.subjects = subjects.rows
+        }
         res.json({
             status: 200,
             message: "查询成功",

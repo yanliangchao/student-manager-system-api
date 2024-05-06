@@ -47,10 +47,15 @@ exports.page = async (req, res) => {
             const stuCount = await db.query(sql3, [clazz.id])
             clazz.sidCount = stuCount.rows[0].count
 
-            // 查询clazz中老师的数量
+            // 查询clazz科目
             const sql4 = `select count(*) from t_class_teacher_subject tcts where tcts.cid = $1`;
             const teaCount = await db.query(sql4, [clazz.id])
             clazz.tidCount = teaCount.rows[0].count
+
+            // 查询主课科目
+            const sql5 = `select tsb.id, tsb.name from t_class_teacher_subject tcts left join t_subject tsb on tcts.sid = tsb.id where tcts.cid = $1 and tcts.master = '1'`;
+            const subjects = await db.query(sql5, [clazz.id])
+            clazz.subjects = subjects.rows
         }
         res.json({
             status: 200,
