@@ -96,7 +96,7 @@ exports.getSubTecById =async (req, res) => {
     try {
         const id = req.params.id
         let result;
-        const sql2 = `select ttc.id tid, ttc.name, ttc.level, ttc.iphone, tsj.id sid, tsj.name subject from t_class_teacher_subject tcts 
+        const sql2 = `select tcts.master, ttc.id tid, ttc.name, ttc.level, ttc.iphone, tsj.id sid, tsj.name subject from t_class_teacher_subject tcts 
                         left join t_teacher ttc on ttc.id = tcts.tid
                         left join t_subject tsj on tsj.id = tcts.sid
                         where tcts.cid = $1`;
@@ -139,8 +139,8 @@ exports.addSubTec = async (req, res) => {
     try {
         const row = req.body
         //const user = await jwt.decode(req)
-        const sql1 = "insert into t_class_teacher_subject (cid, tid, sid) values ($1, $2, $3)";
-        await db.query(sql1, [row.cid, row.tid, row.sid]);
+        const sql1 = "insert into t_class_teacher_subject (cid, tid, sid, master) values ($1, $2, $3, $4)";
+        await db.query(sql1, [row.cid, row.tid, row.sid, row.master]);
         // const sql2 = "insert into t_user_class (uid, sid) values ($1, $2)";
         // if(user.id != 1) {
         //     await db.query(sql2, [1, sid]);
