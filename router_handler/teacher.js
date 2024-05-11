@@ -81,7 +81,7 @@ exports.list = async (req, res) => {
                         where tusc.uid = $1 order by id desc`;
         const response = await db.query(sql2, [user.id]);
         result = response.rows;
-        console.log(result)
+        //console.log(result)
         res.json({
             status: 200,
             message: "查询成功",
@@ -95,8 +95,7 @@ exports.list = async (req, res) => {
 exports.add = async (req, res) => {
     try {
         const teacher = req.body
-        console.log(teacher)
-        const subjects = teacher.subjects;
+        //const subjects = teacher.subjects;
         //const user = await jwt.decode(req)
         const sql1 = "insert into t_teacher (name, iphone, level, sid) values ($1, $2, $3, $4) RETURNING id";
         const response = await db.query(sql1, [teacher.name, teacher.iphone, teacher.level, teacher.sid]);
@@ -118,7 +117,6 @@ exports.add = async (req, res) => {
 exports.mod = async (req, res) => {
     try {
         const teacher = req.body
-        console.log(teacher)
         const sql1 = "update t_teacher set name = $1, iphone = $2, level = $3, sid = $4 where id = $5";
         await db.query(sql1, [teacher.name, teacher.iphone, teacher.level, teacher.sid, teacher.id]);
 

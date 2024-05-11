@@ -3,8 +3,8 @@ const router = express.Router();
 
 const detailsHandler = require('../router_handler/details.js')
 
-router.get('/page', detailsHandler.page)
-router.get('/list/:sid', detailsHandler.list)
+router.get('/page/:id', detailsHandler.page)
+router.get('/list/:id/:sid', detailsHandler.list)
 router.post('/add', detailsHandler.add)
 router.put('/mod', detailsHandler.mod)
 router.delete('/del/:id', detailsHandler.del)
