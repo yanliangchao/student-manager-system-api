@@ -6,11 +6,8 @@ exports.count = async (req, res) => {
         const result = [];
         const user = await jwt.decode(req)
         // 查询班级数量
-        const sql1 = `select count(*) from t_class tcs 
-                        left join t_school tsc on tcs.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`
-        const  classResponse = await db.query(sql1, [user.id])
+        const sql1 = `select count(*) from t_class tcs where tcs.sid = $1`
+        const  classResponse = await db.query(sql1, [user.sid])
         let classCount = {
 			num1: classResponse.rows[0].count,
 			num3: '班级总数量',
@@ -21,11 +18,8 @@ exports.count = async (req, res) => {
 		}
         result.push(classCount)
         // 查询教师数量
-        const sql2 = `select count(*) from t_teacher ttc 
-                        left join t_school tsc on ttc.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`
-        const teacherResponse = await db.query(sql2, [user.id])
+        const sql2 = `select count(*) from t_teacher ttc where ttc.sid = $1`
+        const teacherResponse = await db.query(sql2, [user.sid])
         let teacherCount = {
 			num1: teacherResponse.rows[0].count,
 			num2: '+42.32',
@@ -37,11 +31,8 @@ exports.count = async (req, res) => {
 		}
         result.push(teacherCount)
         // 查询寝室数量
-        const sql3 = `select count(*) from t_dormitory tdm 
-                        left join t_school tsc on tdm.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`
-        const dormitoryReponse = await db.query(sql3, [user.id])
+        const sql3 = `select count(*) from t_dormitory tdm where tdm.sid = $1`
+        const dormitoryReponse = await db.query(sql3, [user.sid])
         let dormitoryCount = {
 			num1: dormitoryReponse.rows[0].count,
 			num2: '+17.32',
@@ -53,11 +44,8 @@ exports.count = async (req, res) => {
 		}
         result.push(dormitoryCount)
         // 查询学生数量
-        const sql4 = `select count(*) from t_student tsd 
-                        left join t_school tsc on tsd.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`
-        const studentResponse = await db.query(sql4, [user.id])
+        const sql4 = `select count(*) from t_student tsd where tsd.sid = $1`
+        const studentResponse = await db.query(sql4, [user.sid])
         let studentCount = {
 			num1: studentResponse.rows[0].count,
 			num2: '-10.01',
@@ -83,10 +71,8 @@ exports.schoolCount = async (req, res) => {
     try{
         const user = await jwt.decode(req)
         // 获取用户学校信息
-        const sql1 = `select tsc.id, tsc.school_name from t_school tsc 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`
-        const response = await db.query(sql1, [user.id]);
+        const sql1 = `select tsc.id, tsc.school_name from t_school tsc where tusc.uid = $1`
+        const response = await db.query(sql1, [user.sid]);
         const result = response.rows;
         for (const school of result) {
             const sql2 = `select count(*) from t_student_details tsdd 

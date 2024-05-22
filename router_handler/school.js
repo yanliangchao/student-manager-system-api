@@ -6,22 +6,21 @@ exports.page = async (req, res) => {
         const requestParams = req.query;
         let pageIndex = (requestParams.pageNum - 1) * requestParams.pageSize
         let pageCount = requestParams.pageSize
-        const user = await jwt.decode(req)
         let count;
         let result;
         if (requestParams.search) {
-            const sql1 = "select count(*) from t_school tsc left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1 and tsc.school_name like $2";
-            const countResponse = await db.query(sql1, [user.id, "%" + requestParams.search + "%"])
+            const sql1 = "select count(*) from t_school tsc where tsc.school_name like $1";
+            const countResponse = await db.query(sql1, ["%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
-            const sql2 = "select * from t_school tsc left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1 and tsc.school_name like $2 order by tsc.id desc limit $3 offset $4";
-            const response = await db.query(sql2, [user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
+            const sql2 = "select * from t_school tsc where tsc.school_name like $1 order by tsc.id desc limit $2 offset $3";
+            const response = await db.query(sql2, ["%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
         } else {
-            const sql1 = "select count(*) from t_school tsc left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1";
-            const countResponse = await db.query(sql1, [user.id])
+            const sql1 = "select count(*) from t_school tsc";
+            const countResponse = await db.query(sql1)
             count = countResponse.rows[0].count
-            const sql2 = "select * from t_school tsc left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1 order by tsc.id desc limit $2 offset $3";
-            const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
+            const sql2 = "select * from t_school tsc";
+            const response = await db.query(sql2, [pageCount, pageIndex]);
             result = response.rows;
         }
         res.json({
@@ -39,10 +38,9 @@ exports.page = async (req, res) => {
 
 exports.list = async (req, res) => {
     try {
-        const user = await jwt.decode(req)
         let result;
-        const sql2 = "select * from t_school tsc left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1 order by tsc.id desc";
-        const response = await db.query(sql2, [user.id]);
+        const sql2 = "select * from t_school tsc order by tsc.id desc";
+        const response = await db.query(sql2);
         result = response.rows;
         res.json({
             status: 200,

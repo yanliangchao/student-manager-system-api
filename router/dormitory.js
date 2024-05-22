@@ -5,6 +5,7 @@ const dormitoryHandler = require('../router_handler/dormitory.js')
 
 router.get('/page', dormitoryHandler.page)
 router.get('/list', dormitoryHandler.list)
+router.get('/list/:sid', dormitoryHandler.listBySid)
 router.get('/list/stu/:id', dormitoryHandler.getStuByid)
 router.post('/add', dormitoryHandler.add)
 router.post('/add/stu', dormitoryHandler.addStu)

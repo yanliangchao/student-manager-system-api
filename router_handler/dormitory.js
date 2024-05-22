@@ -11,41 +11,39 @@ exports.page = async (req, res) => {
         let result;
         if (requestParams.search) {
             const sql1 = `select count(*) from t_dormitory tdm
-                            left join t_teacher ttc on tdm.tid = ttc.id
                             left join t_school tsc on tdm.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (tdm.building like $2 or tdm.name like $2 or ttc.name like $2)`;
-            const countResponse = await db.query(sql1, [user.id, "%" + requestParams.search + "%"])
+                            where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)`;
+            const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
-            const sql2 = `select tdm.id, tdm.building, tdm.name, ttc.id tid, ttc.name ttc_name, ttc.iphone, tsc.id sid, tsc.school_name from t_dormitory tdm
-                            left join t_teacher ttc on tdm.tid = ttc.id
+            const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
                             left join t_school tsc on tdm.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (tdm.building like $2 or tdm.name like $2 or ttc.name like $2)
+                            where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)
                             order by id desc limit $3 offset $4`;
-            const response = await db.query(sql2, [user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
+            const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
         } else {
             const sql1 = `select count(*) from t_dormitory tdm
                             left join t_school tsc on tdm.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1`;
-            const countResponse = await db.query(sql1, [user.id])
+                            where tdm.sid = $1`;
+            const countResponse = await db.query(sql1, [user.sid])
             count = countResponse.rows[0].count
-            const sql2 = `select tdm.id, tdm.building, tdm.name, ttc.id tid, ttc.name ttc_name, ttc.iphone, tsc.id sid, tsc.school_name from t_dormitory tdm
-                            left join t_teacher ttc on tdm.tid = ttc.id
+            const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
                             left join t_school tsc on tdm.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 
+                            where tdm.sid = $1 
                             order by id desc limit $2 offset $3`;
-            const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
+            const response = await db.query(sql2, [user.sid, pageCount, pageIndex]);
             result = response.rows;
         }
         for (const dormitory of result) {
-            // 查询clazz中学生的数量
+            // 查询dormitory中学生的数量
             const sql3 = `select count(*) from t_student_dormitory tsd where tsd.did = $1`;
             const stuCount = await db.query(sql3, [dormitory.id])
             dormitory.sidCount = stuCount.rows[0].count
+
+            // 查询生活老师
+            const sql4 = `select tu.name from t_user tu left join t_user_dormitory tud on tu.id = tud.uid where tu.id != 1 and tud.did = $1`;
+            const manager = await db.query(sql4, [dormitory.id])
+            dormitory.manager = manager.rows
         }
         res.json({
             status: 200,
@@ -64,13 +62,26 @@ exports.list = async (req, res) => {
     try {
         const user = await jwt.decode(req)
         let result;
-        const sql2 = `select tdm.id, tdm.building, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
-                        left join t_school tsc on tdm.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1`;
-        const response = await db.query(sql2, [user.id]);
+        const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.name from t_dormitory tdm where tdm.sid = $1`;
+        const response = await db.query(sql2, [user.sid]);
         result = response.rows;
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: result,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
 
+exports.listBySid = async (req, res) => {
+    try {
+        const sid = req.params.sid
+        let result;
+        const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.name from t_dormitory tdm where tdm.sid = $1`;
+        const response = await db.query(sql2, [sid]);
+        result = response.rows;
         res.json({
             status: 200,
             message: "查询成功",
@@ -105,9 +116,10 @@ exports.getStuByid = async (req, res) => {
 
 exports.add = async (req, res) => {
     try {
+        const user = await jwt.decode(req)
         const dormitory = req.body
-        const sql1 = "insert into t_dormitory (building, name, tid, sid) values ($1, $2, $3, $4) RETURNING id";
-        const response = await db.query(sql1, [dormitory.building, dormitory.name, dormitory.tid, dormitory.sid]);
+        const sql1 = "insert into t_dormitory (building, storey, gender, name, tid, sid) values ($1, $2, $3, $4, $5, $6) RETURNING id";
+        const response = await db.query(sql1, [dormitory.building, dormitory.storey, dormitory.gender, dormitory.name, dormitory.tid, user.sid]);
         const sid = response.rows[0].id
         res.json({
             status: 200,
@@ -137,8 +149,8 @@ exports.addStu = async (req, res) => {
 exports.mod = async (req, res) => {
     try {
         const dormitory = req.body
-        const sql = "update t_dormitory set building = $1, name = $2, tid = $3, sid = $4 where id = $5";
-        await db.query(sql, [dormitory.building, dormitory.name, dormitory.tid, dormitory.sid, dormitory.id]);
+        const sql = "update t_dormitory set building = $1, storey = $2, gender =$3, name = $4, tid = $5 where id = $6";
+        await db.query(sql, [dormitory.building, dormitory.storey, dormitory.gender, dormitory.name, dormitory.tid, dormitory.id]);
         res.json({
             status: 200,
             message: "修改成功",

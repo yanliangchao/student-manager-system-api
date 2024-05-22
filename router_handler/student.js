@@ -15,19 +15,17 @@ exports.page = async (req, res) => {
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (tsd.name like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)`;
-            const countResponse = await db.query(sql1, [user.id, "%" + requestParams.search + "%"])
+                            where tsd.sid = $1 and (tsd.name like $2 or tsd.gender like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)`;
+            const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
-            const sql2 = `select tsd.id, tsd.name, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tcs.id cid, tcs.class_id, tcs.class_name, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name, tsc.id sid, tsc.school_name from t_student tsd 
+            const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tcs.id cid, tcs.class_id, tcs.class_name, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name, tsc.id sid, tsc.school_name from t_student tsd 
                             left join t_class tcs on tsd.cid = tcs.id
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (tsd.name like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)
+                            where tsd.sid = $1 and (tsd.name like $2 or tsd.gender like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)
                             order by id desc limit $3 offset $4`;
-            const response = await db.query(sql2, [user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
+            const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
         } else {
             const sql1 = `select count(*) from t_student tsd 
@@ -35,19 +33,17 @@ exports.page = async (req, res) => {
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1`;
-            const countResponse = await db.query(sql1, [user.id])
+                            where tsd.sid = $1`;
+            const countResponse = await db.query(sql1, [user.sid])
 
             count = countResponse.rows[0].count
-            const sql2 = `select tsd.id, tsd.name, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tcs.id cid, tcs.class_id, tcs.class_name, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name, tsc.id sid, tsc.school_name from t_student tsd 
+            const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tcs.id cid, tcs.class_id, tcs.class_name, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name, tsc.id sid, tsc.school_name from t_student tsd 
                             left join t_class tcs on tsd.cid = tcs.id
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 order by id desc limit $2 offset $3`;
-            const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
+                            where tsd.sid = $1 order by id desc limit $2 offset $3`;
+            const response = await db.query(sql2, [user.sid, pageCount, pageIndex]);
             result = response.rows;
         }
         for (const student of result) {
@@ -81,7 +77,7 @@ exports.pageByCid = async (req, res) => {
         const sql1 = `select count(*) from t_student tsd where tsd.cid = $1`;
         const countResponse = await db.query(sql1, [cid])
         count = countResponse.rows[0].count
-        const sql2 = `select tsd.id, tsd.name, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name from t_student tsd 
+        const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name from t_student tsd 
                         left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                         left join t_dormitory tdm on tsdd.did = tdm.id 
                         where tsd.cid = $1 order by id desc limit $2 offset $3`;
@@ -103,12 +99,11 @@ exports.pageByCid = async (req, res) => {
 
 exports.list = async (req, res) => {
     try {
+        const gender = req.params.gender
         const user = await jwt.decode(req)
         let result;
-        const sql2 = `select tsd.id, tsd.name, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tsc.id sid, tsc.school_name from t_student tsd 
-                        left join t_school tsc on tsd.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid where tusc.uid = $1 order by id desc`;
-        const response = await db.query(sql2, [user.id]);
+        const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone from t_student tsd left join t_student_dormitory tsdm on tsd.id = tsdm.sid where tsd.sid = $1 and tsd.gender = $2 and tsdm.did is null order by id desc`;
+        const response = await db.query(sql2, [user.sid, gender]);
         result = response.rows;
 
         res.json({
@@ -124,10 +119,9 @@ exports.list = async (req, res) => {
 exports.add = async (req, res) => {
     try {
         const student = req.body
-        console.log(student)
         const user = await jwt.decode(req)
-        const sql1 = "insert into t_student (name, iphone, address, father, mother, father_iphone, mother_iphone, cid, sid) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
-        const response = await db.query(sql1, [student.name, student.iphone, student.address, student.father, student.mother, student.father_iphone, student.mother_iphone, student.cid, student.sid]);
+        const sql1 = "insert into t_student (name, iphone, gender, address, father, mother, father_iphone, mother_iphone, cid, sid) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id";
+        const response = await db.query(sql1, [student.name, student.iphone, student.gender, student.address, student.father, student.mother, student.father_iphone, student.mother_iphone, student.cid, user.sid]);
         const sid = response.rows[0].id
        
         res.json({
@@ -143,9 +137,9 @@ exports.add = async (req, res) => {
 exports.mod = async (req, res) => {
     try {
         const student = req.body
-        console.log(student)
-        const sql1 = "update t_student set name = $1, iphone = $2, address = $3, father = $4, mother = $5, father_iphone = $6, mother_iphone = $7, cid = $8, sid = $9 where id = $10";
-        await db.query(sql1, [student.name, student.iphone, student.address, student.father, student.mother, student.father_iphone, student.mother_iphone, student.cid, student.sid, student.id]);
+        const user = await jwt.decode(req)
+        const sql1 = "update t_student set name = $1, iphone = $2, gender = $3, address = $4, father = $5, mother = $6, father_iphone = $7, mother_iphone = $8, cid = $9, sid = $10 where id = $11";
+        await db.query(sql1, [student.name, student.iphone, student.gender, student.address, student.father, student.mother, student.father_iphone, student.mother_iphone, student.cid, student.sid, user.id]);
         
         res.json({
             status: 200,

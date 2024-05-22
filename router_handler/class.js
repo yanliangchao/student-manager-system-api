@@ -13,32 +13,28 @@ exports.page = async (req, res) => {
             const sql1 = `select count(*) from t_class tcs 
                             left join t_teacher ttc on tcs.tid = ttc.id 
                             left join t_school tsc on tcs.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 and (tcs.class_id like $2 or tcs.class_name like $2 or ttc.name like $2 or tsc.school_name like $2)`;
-            const countResponse = await db.query(sql1, [user.id, "%" + requestParams.search + "%"])
+                            where tcs.sid = $1 and (tcs.class_id like $2 or tcs.class_name like $2 or ttc.name like $2 or tsc.school_name like $2)`;
+            const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
             const sql2 = `select tcs.id, tcs.class_id, tcs.class_name, ttc.id tid, ttc.name, tsc.id sid, tsc.school_name from t_class tcs 
                             left join t_teacher ttc on tcs.tid = ttc.id 
                             left join t_school tsc on tcs.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1  and (tcs.class_id like $2 or tcs.class_name like $2 or ttc.name like $2 or tsc.school_name like $2)
+                            where tcs.sid = $1  and (tcs.class_id like $2 or tcs.class_name like $2 or ttc.name like $2 or tsc.school_name like $2)
                             order by tsc.id desc limit $3 offset $4`;
-            const response = await db.query(sql2, [user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
+            const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
         } else {
             const sql1 = `select count(*) from t_class tcs 
                             left join t_teacher ttc on tcs.tid = ttc.id 
                             left join t_school tsc on tcs.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1`;
-            const countResponse = await db.query(sql1, [user.id])
+                            where tcs.sid = $1`;
+            const countResponse = await db.query(sql1, [user.sid])
             count = countResponse.rows[0].count
             const sql2 = `select tcs.id, tcs.class_id, tcs.class_name, ttc.id tid, ttc.name, tsc.id sid, tsc.school_name from t_class tcs 
                             left join t_teacher ttc on tcs.tid = ttc.id 
                             left join t_school tsc on tcs.sid = tsc.id 
-                            left join t_user_school tusc on tsc.id = tusc.sid 
-                            where tusc.uid = $1 order by tsc.id desc limit $2 offset $3`;
-            const response = await db.query(sql2, [user.id, pageCount, pageIndex]);
+                            where tcs.sid = $1 order by tsc.id desc limit $2 offset $3`;
+            const response = await db.query(sql2, [user.sid, pageCount, pageIndex]);
             result = response.rows;
         }
         for (const clazz of result) {
@@ -74,12 +70,8 @@ exports.list = async (req, res) => {
     try {
         const user = await jwt.decode(req)
         let result;
-        const sql2 = `select tcs.id, tcs.class_id, tcs.class_name, ttc.id tid, ttc.name, tsc.id sid, tsc.school_name from t_class tcs 
-                        left join t_teacher ttc on tcs.tid = ttc.id 
-                        left join t_school tsc on tcs.sid = tsc.id 
-                        left join t_user_school tusc on tsc.id = tusc.sid 
-                        where tusc.uid = $1 order by tsc.id desc`;
-        const response = await db.query(sql2, [user.id]);
+        const sql2 = `select tcs.id, tcs.class_id, tcs.class_name from t_class tcs where tcs.sid = $1 order by tcs.id desc`;
+        const response = await db.query(sql2, [user.sid]);
         result = response.rows;
 
         res.json({
@@ -116,9 +108,9 @@ exports.getSubTecById =async (req, res) => {
 exports.add = async (req, res) => {
     try {
         const clazz = req.body
-        //const user = await jwt.decode(req)
+        const user = await jwt.decode(req)
         const sql1 = "insert into t_class (class_id, class_name, tid, sid) values ($1, $2, $3, $4) RETURNING id";
-        const response = await db.query(sql1, [clazz.class_id, clazz.class_name, clazz.tid, clazz.sid]);
+        const response = await db.query(sql1, [clazz.class_id, clazz.class_name, clazz.tid, user.sid]);
         const cid = response.rows[0].id
         // const sql2 = "insert into t_user_class (uid, sid) values ($1, $2)";
         // if(user.id != 1) {
@@ -158,8 +150,8 @@ exports.addSubTec = async (req, res) => {
 exports.mod = async (req, res) => {
     try {
         const clazz = req.body
-        const sql = "update t_class set class_id = $1, class_name = $2, tid = $3, sid = $4 where id = $5";
-        const response = await db.query(sql, [clazz.class_id, clazz.class_name, clazz.tid, clazz.sid, clazz.id]);
+        const sql = "update t_class set class_id = $1, class_name = $2, tid = $3, where id = $4";
+        const response = await db.query(sql, [clazz.class_id, clazz.class_name, clazz.tid, clazz.id]);
         console.log(response)
 
         res.json({
@@ -176,7 +168,7 @@ exports.del = async (req, res) => {
         const id = req.params.id
         const sql1 = "delete from t_class where id =$1";
         await db.query(sql1, [id]);
-        const sql2 = "delete from t_class_teacher_subject where tid =$1";
+        const sql2 = "delete from t_class_teacher_subject where cid =$1";
         await db.query(sql2, [id]);
         res.json({
             status: 200,
