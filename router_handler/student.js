@@ -97,7 +97,26 @@ exports.pageByCid = async (req, res) => {
 
 };
 
+
 exports.list = async (req, res) => {
+    try {
+        const user = await jwt.decode(req)
+        let result;
+        const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone from t_student tsd where tsd.sid = $1 order by id desc`;
+        const response = await db.query(sql2, [user.sid]);
+        result = response.rows;
+
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: result,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
+
+exports.listByDormitory = async (req, res) => {
     try {
         const gender = req.params.gender
         const user = await jwt.decode(req)
