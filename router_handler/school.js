@@ -19,7 +19,7 @@ exports.page = async (req, res) => {
             const sql1 = "select count(*) from t_school tsc";
             const countResponse = await db.query(sql1)
             count = countResponse.rows[0].count
-            const sql2 = "select * from t_school tsc";
+            const sql2 = "select tsc.* from t_school tsc limit $1 offset $2";
             const response = await db.query(sql2, [pageCount, pageIndex]);
             result = response.rows;
         }
