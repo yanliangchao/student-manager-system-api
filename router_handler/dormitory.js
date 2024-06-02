@@ -163,6 +163,30 @@ exports.pingfen = async (req, res) => {
     }
 }
 
+exports.dianming = async (req, res) => {
+    try {
+        const user = await jwt.decode(req)
+        const dianming = req.body
+        // 请假
+        for(const leave of dianming.leaves) {
+            const sql1 = `insert into t_student_details (sid, number, describes, times, uid) values ($1, $2, $3, $4, $5)`
+            await db.query(sql1, [leave, 0, "请假", new Date(), user.id]);
+        }
+        // 缺寝
+        for(const absenc of dianming.absence) {
+            const sql2 = `insert into t_student_details (sid, number, describes, times, uid) values ($1, $2, $3, $4, $5)`
+            await db.query(sql2, [absenc, 2, "缺寝", new Date(), user.id]);
+        }
+        res.json({
+            status: 200,
+            message: "新增成功",
+        });
+        
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
+
 exports.addStu = async (req, res) => {
     try {
         const row = req.body
