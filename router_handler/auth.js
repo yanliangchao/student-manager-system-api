@@ -29,3 +29,10 @@ exports.login = async (req, res) => {
     }
     
   };
+
+exports.files = async (req, res) => {
+  res.json({
+    status: 200,
+    message: "成功",
+  });
+}

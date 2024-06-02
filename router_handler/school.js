@@ -55,16 +55,10 @@ exports.list = async (req, res) => {
 exports.add = async (req, res) => {
     try {
         const school = req.body
-        console.log(school)
         const user = await jwt.decode(req)
         const sql1 = "insert into t_school (school_name) values ($1) RETURNING id";
         const response = await db.query(sql1, [school.school_name]);
         const sid = response.rows[0].id
-        const sql2 = "insert into t_user_school (uid, sid) values ($1, $2)";
-        if(user.id != 1) {
-            await db.query(sql2, [1, sid]);
-        } 
-        await db.query(sql2, [user.id, sid]);
         res.json({
             status: 200,
             message: "新增成功",
