@@ -16,7 +16,7 @@ exports.page = async (req, res) => {
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            where tsd.sid = $1 and (tsd.name like $2 or tsd.gender like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)`;
+                            where tsd.sid = $1 and (tsd.name like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)`;
             const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
             count = countResponse.rows[0].count
             const sql2 = `select tsd.id, tsd.name, tsd.gender, tsd.iphone, tsd.address, tsd.father, tsd.father_iphone, tsd.mother, tsd.mother_iphone, tcs.id cid, tcs.class_id, tcs.class_name, tsdd.did, tsdd.number, tdm.building, tdm.name dormitory_name, tsc.id sid, tsc.school_name from t_student tsd 
@@ -24,7 +24,7 @@ exports.page = async (req, res) => {
                             left join t_student_dormitory tsdd on tsd.id = tsdd.sid 
                             left join t_dormitory tdm on tsdd.did = tdm.id 
                             left join t_school tsc on tsd.sid = tsc.id 
-                            where tsd.sid = $1 and (tsd.name like $2 or tsd.gender like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)
+                            where tsd.sid = $1 and (tsd.name like $2 or tsd.iphone like $2 or tsd.address like $2 or tsd.father like $2 or tsd.mother like $2 or tsd.father_iphone like $2 or tsd.mother_iphone like $2 or tdm.building like $2 or tdm.name like $2 or tcs.class_id like $2 or tcs.class_name like $2 or tsc.school_name like $2)
                             order by id desc limit $3 offset $4`;
             const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
             result = response.rows;
