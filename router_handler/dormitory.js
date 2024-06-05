@@ -202,7 +202,11 @@ exports.getStorey = async (req, res) => {
         const count = countResponse.rows[0].count
 
         for(const storey of storeys) {
-            storey.times = new Date()
+            const date = new Date()
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            storey.times = `${year}-${month}-${day}`;
         }
        
         res.json({
