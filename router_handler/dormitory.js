@@ -200,6 +200,10 @@ exports.getStorey = async (req, res) => {
         const sql2 = `select count(*) FROM (SELECT tdm.building, tdm.storey, COUNT(*) count FROM t_dormitory tdm GROUP BY tdm.building, tdm.storey)`
         const countResponse = await db.query(sql2);
         const count = countResponse.rows[0].count
+
+        for(const storey of storeys) {
+            storey.times = new Date()
+        }
        
         res.json({
             status: 200,
