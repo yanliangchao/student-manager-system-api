@@ -196,3 +196,24 @@ exports.classCount = async (req, res) => {
         res.status(400).json(err);
     }
 }
+
+exports.getLeave = async (req, res) => {
+    try{
+        const sql1 = `select tcs.class_name class_name, tsu.name, tdm.building, tdm.storey, tdm.name tdm_name, tus.name username from t_student_details tsd 
+                        left join t_student tsu on tsd.sid = tsu.id
+                        left join t_student_dormitory tsm on tsm.sid = tsu.id
+                        left join t_dormitory tdm on tdm.id = tsm.did
+                        left join t_class tcs on tcs.id = tsu.cid
+                        left join t_user tus on tus.id = tsd.uid
+                        where tsd.describes = '请假' and date_trunc('day', tsd.times) = date_trunc('day', now());`
+        const details = await db.query(sql1);
+        const result = details.rows;
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: result,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}

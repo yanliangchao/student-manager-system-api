@@ -140,17 +140,18 @@ exports.pingfen = async (req, res) => {
         const response = await db.query(sql1, [pingfen.did]);
         const students = response.rows;
         // 循环学生，将公共评分加入学生详情，
+        const date = new Date();
         for(const public of pingfen.publics) {
             for (const student of students) {
                 const sql2 = `insert into t_student_details (sid, number, describes, type, times, uid) values ($1, $2, $3, $4, $5, $6)`
-                await db.query(sql2, [student.sid, public.number, public.reason, 0, new Date(), user.id]);
+                await db.query(sql2, [student.sid, public.number, public.reason, 0, date, user.id]);
             }
         }
         // 有个人部分也加个人部分
         for(const personal of pingfen.personals) {
             for(const public of personal.publics) {
                 const sql3 = `insert into t_student_details (sid, number, describes, type, times, uid) values ($1, $2, $3, $4, $5, $6)`
-                await db.query(sql3, [personal.sid, public.number, public.reason, 1, new Date(), user.id]);
+                await db.query(sql3, [personal.sid, public.number, public.reason, 1, date, user.id]);
             } 
         }
         res.json({
@@ -168,14 +169,15 @@ exports.dianming = async (req, res) => {
         const user = await jwt.decode(req)
         const dianming = req.body
         // 请假
+        const date = new Date();
         for(const leave of dianming.leaves) {
             const sql1 = `insert into t_student_details (sid, number, describes, type, times, uid) values ($1, $2, $3, $4, $5, $6)`
-            await db.query(sql1, [leave, 0, "请假", 1, new Date(), user.id]);
+            await db.query(sql1, [leave, 0, "请假", 1, date, user.id]);
         }
         // 缺寝
         for(const absenc of dianming.absence) {
             const sql2 = `insert into t_student_details (sid, number, describes, type, times, uid) values ($1, $2, $3, $4, $5, $6)`
-            await db.query(sql2, [absenc, 2, "缺寝", 1, new Date(), user.id]);
+            await db.query(sql2, [absenc, 2, "缺寝", 1, date, user.id]);
         }
         res.json({
             status: 200,
@@ -288,6 +290,58 @@ exports.pingfenPrint = async (req, res) => {
     }
 }
 
+exports.personalPrint = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const times = req.query.times;
+        // 生成数据
+        const sql1 = `select tsu.name, tsd.describes, tsd.type, tsd.times, tsd.number from t_student_details tsd 
+            left join t_student tsu on tsd.sid = tsu.id 
+            left join t_student_dormitory tsdm on tsd.sid = tsdm.sid
+            where tsdm.did = $1 and tsd.number > 0 and date_trunc('day', tsd.times) > $2 and  date_trunc('day', tsd.times) < $3`;
+        const detailResponse = await db.query(sql1, [id, times[0], times[1]]);
+        const details = detailResponse.rows;
+        let data = {
+            public: [],
+            personal: [],
+        }
+        for(const detail of details) {
+            if(detail.type == 0) {
+                if(!data.public.includes(detail.describes + " -" + detail.number + "    " + formatDate(detail.times))) {
+                    data.public.push(detail.describes + " -" + detail.number + "    " + formatDate(detail.times))
+                }
+            } else {
+                let stu = data.personal.find(stu => stu.name === detail.name)
+                if(stu) {
+                    stu.details.push(detail.describes + " -" + detail.number + "    " + formatDate(detail.times))
+                } else {
+                    data.personal.push({name: detail.name, details: [detail.describes + " -" + detail.number + "    " + formatDate(detail.times)]})
+                }
+            }
+        }
+        res.json({
+            status: 200,
+            message: "新增成功",
+            data: data,
+        });
+        
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}
+
+
+//格式化时间
+const formatDate = (date) => {
+    var year = date.getFullYear();
+    var month = ("0" + (date.getMonth() + 1)).slice(-2); // 月份从0开始，所以要加1
+    var day = ("0" + date.getDate()).slice(-2);
+    var hours = ("0" + date.getUTCHours()).slice(-2);
+    var minutes = ("0" + date.getMinutes()).slice(-2);
+    var seconds = ("0" + date.getSeconds()).slice(-2);
+    return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+
+}
 
 exports.dianmingPrint = async (req, res) => {
     try {
@@ -297,18 +351,19 @@ exports.dianmingPrint = async (req, res) => {
         const sql1 = `select tsd.sid from t_student_dormitory tsd where tsd.did = $1`;
         const response = await db.query(sql1, [pingfen.did]);
         const students = response.rows;
+        const date = new Date();
         // 循环学生，将公共评分加入学生详情，
         for(const public of pingfen.publics) {
             for (const student of students) {
                 const sql2 = `insert into t_student_details (sid, number, describes, times, uid) values ($1, $2, $3, $4, $5)`
-                await db.query(sql2, [student.sid, public.number, public.reason + "卫生扣分", new Date(), user.id]);
+                await db.query(sql2, [student.sid, public.number, public.reason, date, user.id]);
             }
         }
         // 有个人部分也加个人部分
         for(const personal of pingfen.personals) {
             for(const public of personal.publics) {
                 const sql3 = `insert into t_student_details (sid, number, describes, times, uid) values ($1, $2, $3, $4, $5)`
-                await db.query(sql3, [personal.sid, public.number, public.reason + "卫生扣分", new Date(), user.id]);
+                await db.query(sql3, [personal.sid, public.number, public.reason, date, user.id]);
             } 
         }
         res.json({

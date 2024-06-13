@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const authHandler = require('../router_handler/dashboard.js')
+const dashboardHandler = require('../router_handler/dashboard.js')
 
-router.get('/count', authHandler.count)
-router.get('/school/count', authHandler.schoolCount)
-router.get('/teacher/count/:id', authHandler.teacherCount)
-router.get('/dormitory/count/:id', authHandler.dormitoryCount)
-router.get('/class/count/:id', authHandler.classCount)
+router.get('/count', dashboardHandler.count)
+router.get('/school/count', dashboardHandler.schoolCount)
+router.get('/school/leave', dashboardHandler.getLeave)
+router.get('/teacher/count/:id', dashboardHandler.teacherCount)
+router.get('/dormitory/count/:id', dashboardHandler.dormitoryCount)
+router.get('/class/count/:id', dashboardHandler.classCount)
 
 module.exports = router
