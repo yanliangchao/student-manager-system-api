@@ -9,5 +9,6 @@ router.get('/school/leave', dashboardHandler.getLeave)
 router.get('/teacher/count/:id', dashboardHandler.teacherCount)
 router.get('/dormitory/count/:id', dashboardHandler.dormitoryCount)
 router.get('/class/count/:id', dashboardHandler.classCount)
+router.get('/teacher/pinfen', dashboardHandler.getPinfenCount)
 
 module.exports = router

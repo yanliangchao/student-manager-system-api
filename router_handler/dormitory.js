@@ -298,7 +298,7 @@ exports.personalPrint = async (req, res) => {
         const sql1 = `select tsu.name, tsd.describes, tsd.type, tsd.times, tsd.number from t_student_details tsd 
             left join t_student tsu on tsd.sid = tsu.id 
             left join t_student_dormitory tsdm on tsd.sid = tsdm.sid
-            where tsdm.did = $1 and tsd.number > 0 and date_trunc('day', tsd.times) > $2 and  date_trunc('day', tsd.times) < $3`;
+            where tsdm.did = $1 and tsd.number > 0 and date_trunc('day', tsd.times) >= $2 and  date_trunc('day', tsd.times) <= $3`;
         const detailResponse = await db.query(sql1, [id, times[0], times[1]]);
         const details = detailResponse.rows;
         let data = {
