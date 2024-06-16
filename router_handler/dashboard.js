@@ -253,11 +253,11 @@ exports.getPinfenCount = async (req, res) => {
                                 where tud.uid = $3 and tsu.number is not null group by tsd.did;`
                 const response3 = await db.query(sql4, [formatDate(startDay), formatDate(today), u.id])
                 const tdmTotal = response3.rows;
-                let total = tdmCount * 100;
+                let total = tdmCount * tsuCount * 100;
                 for(const num of tdmTotal) {
                     total = total-num.total;
                 }
-                const avg = total/tdmCount;
+                const avg = total/tdmCount/tsuCount;
                 u.avg = avg.toFixed(2);
             } else {
                 u.avg = 0;
