@@ -120,9 +120,10 @@ exports.list = async (req, res) => {
 exports.add = async (req, res) => {
     try {
         const details = req.body
+        const user = await jwt.decode(req)
         if(details.sid && !details.tid) {
-            const sql1 = "insert into t_student_details (times, describes, sid) values ($1, $2, $3) RETURNING id";
-            const response = await db.query(sql1, [details.times, details.describes, details.sid]);
+            const sql1 = "insert into t_student_details (times, describes, sid, uid) values ($1, $2, $3, $4) RETURNING id";
+            const response = await db.query(sql1, [details.times, details.describes, details.sid, user.id]);
             const sid = response.rows[0].id
             res.json({
                 status: 200,
@@ -146,6 +147,40 @@ exports.add = async (req, res) => {
         res.status(400).json(err);
     }
 };
+
+exports.addLeave= async (req, res) => {
+    try {
+        const details = req.body
+        const user = await jwt.decode(req)
+        let dates = getDatesArray(details.times[0], details.times[1]);
+        for(const date of dates) {
+            const sql1 = "insert into t_student_details (times, describes, sid, uid) values ($1, $2, $3, $4) RETURNING id";
+            await db.query(sql1, [new Date(date), '请假', details.sid, user.id]);
+        }
+        res.json({
+            status: 200,
+            message: "新增成功",
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}
+
+
+function getDatesArray(startDate, endDate) {
+    const dateArray = [];
+    let currentDate = new Date(startDate);
+    dateArray.push(currentDate.toISOString().split('T')[0]);
+    while (currentDate <= new Date(endDate)) {
+        // 将当前日期增加一天
+        currentDate.setDate(currentDate.getDate() + 1);
+        // 将当前日期的字符串表示添加到数组中
+        dateArray.push(currentDate.toISOString().split('T')[0]);
+      
+    }
+   
+    return dateArray;
+}
 
 exports.mod = async (req, res) => {
     try {

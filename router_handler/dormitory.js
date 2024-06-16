@@ -9,30 +9,62 @@ exports.page = async (req, res) => {
         const user = await jwt.decode(req)
         let count;
         let result;
-        if (requestParams.search) {
-            const sql1 = `select count(*) from t_dormitory tdm
-                            left join t_school tsc on tdm.sid = tsc.id 
-                            where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)`;
-            const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
-            count = countResponse.rows[0].count
-            const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
-                            left join t_school tsc on tdm.sid = tsc.id 
-                            where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)
-                            order by id desc limit $3 offset $4`;
-            const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
-            result = response.rows;
+        if(user.role === 'user') {
+            if (requestParams.search) {
+                const sql1 = `select count(*) from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                left join t_user_dormitory tud on tud.did = tdm.id
+                                where tdm.sid = $1 and tud.uid = $2 and (tdm.building like $3 or tdm.name like $3)`;
+                const countResponse = await db.query(sql1, [user.sid, user.id, "%" + requestParams.search + "%"])
+                count = countResponse.rows[0].count
+                const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                left join t_user_dormitory tud on tud.did = tdm.id
+                                where tdm.sid = $1 and tud.uid = $2 and (tdm.building like $3 or tdm.name like $3)
+                                order by id desc limit $4 offset $5`;
+                const response = await db.query(sql2, [user.sid, user.id, "%" + requestParams.search + "%", pageCount, pageIndex]);
+                result = response.rows;
+            } else {
+                const sql1 = `select count(*) from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                left join t_user_dormitory tud on tud.did = tdm.id
+                                where tdm.sid = $1 and tud.uid = $2 `;
+                const countResponse = await db.query(sql1, [user.sid, user.id])
+                count = countResponse.rows[0].count
+                const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                left join t_user_dormitory tud on tud.did = tdm.id
+                                where tdm.sid = $1 and tud.uid = $2 
+                                order by id desc limit $3 offset $4`;
+                const response = await db.query(sql2, [user.sid, user.id, pageCount, pageIndex]);
+                result = response.rows;
+            }
         } else {
-            const sql1 = `select count(*) from t_dormitory tdm
-                            left join t_school tsc on tdm.sid = tsc.id 
-                            where tdm.sid = $1`;
-            const countResponse = await db.query(sql1, [user.sid])
-            count = countResponse.rows[0].count
-            const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
-                            left join t_school tsc on tdm.sid = tsc.id 
-                            where tdm.sid = $1 
-                            order by id desc limit $2 offset $3`;
-            const response = await db.query(sql2, [user.sid, pageCount, pageIndex]);
-            result = response.rows;
+            if (requestParams.search) {
+                const sql1 = `select count(*) from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)`;
+                const countResponse = await db.query(sql1, [user.sid, "%" + requestParams.search + "%"])
+                count = countResponse.rows[0].count
+                const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                where tdm.sid = $1 and (tdm.building like $2 or tdm.name like $2)
+                                order by id desc limit $3 offset $4`;
+                const response = await db.query(sql2, [user.sid, "%" + requestParams.search + "%", pageCount, pageIndex]);
+                result = response.rows;
+            } else {
+                const sql1 = `select count(*) from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                where tdm.sid = $1`;
+                const countResponse = await db.query(sql1, [user.sid])
+                count = countResponse.rows[0].count
+                const sql2 = `select tdm.id, tdm.building, tdm.storey, tdm.gender, tdm.number, tdm.name, tsc.id sid, tsc.school_name from t_dormitory tdm
+                                left join t_school tsc on tdm.sid = tsc.id 
+                                where tdm.sid = $1 
+                                order by id desc limit $2 offset $3`;
+                const response = await db.query(sql2, [user.sid, pageCount, pageIndex]);
+                result = response.rows;
+            }
         }
         for (const dormitory of result) {
             // 查询dormitory中学生的数量
@@ -101,6 +133,24 @@ exports.getStuByid = async (req, res) => {
                         left join t_student stu on tsd.sid = stu.id
                         left join t_class tcs on stu.cid = tcs.id
                         where tsd.did = $1`;
+        const response = await db.query(sql2, [id]);
+        result = response.rows;
+
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: result,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+};
+
+exports.getLeaveStuByid = async (req, res) => {
+    try {
+        const id = req.params.id
+        let result;
+        const sql2 = `select sid from (select tsdd.sid from t_student_details tsdd left join t_student_dormitory tsdm on tsdd.sid = tsdm.sid where tsdm.did = $1 and date_trunc('day', tsdd.times) = date_trunc('day', now()) and tsdd.describes = '请假') group by sid`;
         const response = await db.query(sql2, [id]);
         result = response.rows;
 

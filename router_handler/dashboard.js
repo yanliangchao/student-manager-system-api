@@ -251,7 +251,7 @@ exports.getPinfenCount = async (req, res) => {
                                     group by tsd.sid) tsu on tsd.sid = tsu.sid 
                                 left join t_user_dormitory tud on tud.did = tsd.did
                                 where tud.uid = $3 and tsu.number is not null group by tsd.did;`
-                response3 = await db.query(sql4, [formatDate(startDay), formatDate(today), u.id])
+                const response3 = await db.query(sql4, [formatDate(startDay), formatDate(today), u.id])
                 const tdmTotal = response3.rows;
                 let total = tdmCount * 100;
                 for(const num of tdmTotal) {
@@ -265,7 +265,7 @@ exports.getPinfenCount = async (req, res) => {
 
             // 获取今日总用时
             const sql5 = `select tsd.times from t_student_details tsd where tsd.uid = $1 and  date_trunc('day', tsd.times) = date_trunc('day', now()) order by times desc limit 1`
-            response5 = await db.query(sql5, [u.id])
+            const response5 = await db.query(sql5, [u.id])
             const lastTime = response5.rows[0];
             const time5 = formatDate(new Date()) + " 2:30:00"
             const time11 = formatDate(new Date()) + " 11:30:00"
@@ -277,22 +277,20 @@ exports.getPinfenCount = async (req, res) => {
             } else if (lastTime.times > new Date(time5) && new Date() < new Date(time11)) {
                 // 获取上午评分用时
                 const sql6 = `select tsd.times from t_student_details tsd where tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3 order by times asc limit 1`
-                response5 = await db.query(sql6, [u.id, time5, time11])
-                const startTime = response5.rows[0];
+                const response6 = await db.query(sql6, [u.id, time5, time11])
+                const startTime = response6.rows[0];
                 totalTime = ((lastTime.times.getTime() - startTime.times.getTime())/1000/60/60).toFixed(2)
             } else if (lastTime.times < new Date(time11) && new Date() > new Date(time11)) {
                 totalTime = '下午未评分！'
             } else {
                 //获取下午评分用时
                 const sql7 = `select tsd.times from t_student_details tsd where tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3 order by times asc limit 1`
-                response5 = await db.query(sql7, [u.id, time11, time16])
-                const startTime = response5.rows[0];
+                const response7 = await db.query(sql7, [u.id, time11, time16])
+                const startTime = response7.rows[0];
 
                 totalTime = ((lastTime.times.getTime() - startTime.times.getTime())/1000/60/60).toFixed(2)
             }
-            u.totalTime = totalTime;
-            
-            
+            u.totalTime = totalTime;            
         }
 
         res.json({
@@ -305,6 +303,87 @@ exports.getPinfenCount = async (req, res) => {
     }
 }
 
+exports.getDiscipline = async (req, res) => {
+    try{
+        const user = await jwt.decode(req)
+        const sql1 = `select tsd.name, tsdd.times, tsdd.describes, tsdd.number from t_student_details tsdd 
+                        left join t_student tsd on tsdd.sid = tsd.id 
+                        where tsdd.number is not null and date_trunc('day', tsdd.times) = date_trunc('day', now()) and tsd.sid = $1 
+                        order by tsdd.number desc `
+        const response = await db.query(sql1, [user.sid])
+        const discipline = response.rows;
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: discipline,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}
+
+exports.getDianmingCount = async (req, res) => {
+    try{
+        const user = await jwt.decode(req)
+        const sql1 = `select tus.id, tus.username from t_user tus where tus.sid = $1 and tus.role = 'user'`
+        const response = await db.query(sql1, [user.sid])
+        const users = response.rows;
+        
+        for (const u of users) {
+            // 获取宿舍数量
+            const sql2 = `select count(*) from t_user_dormitory tud where tud.uid = $1`
+            const response1 = await db.query(sql2, [u.id])
+            const tdmCount = response1.rows[0].count;
+            u.tdmCount = tdmCount;
+
+            // 获取学生数量
+            const sql3 = `select count(*) from t_student_dormitory tsd left join t_user_dormitory tud on tsd.did = tud.did where tud.uid = $1`
+            const response2 = await db.query(sql3, [u.id])
+            const tsuCount = response2.rows[0].count;
+            u.tsuCount = tsuCount;
+
+            const time5 = formatDate(new Date()) + " 2:30:00"
+            const time11 = formatDate(new Date()) + " 11:30:00"
+            const time16 = formatDate(new Date()) + " 16:30:00"
+
+            
+            if(new Date() < new Date(time11)) {
+                // 上午点名
+                // 缺寝
+                const sql4 = `select count(*) from t_student_details tsd where tsd.describes = '缺寝' and tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3`
+                const response3 = await db.query(sql4, [u.id, time5, time11])
+                const lack = response3.rows[0].count;
+                // 请假
+                const sql5 = `select count(*) from t_student_details tsd where tsd.describes = '请假' and tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3`
+                const response4 = await db.query(sql5, [u.id, time5, time11])
+                const leave = response4.rows[0].count;
+                u.lack = lack;
+                u.leave = leave;
+            } else {
+                // 下午点名
+                // 缺寝
+                const sql4 = `select count(*) from t_student_details tsd where tsd.describes = '缺寝' and tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3`
+                const response3 = await db.query(sql4, [u.id, time11, time16])
+                const lack = response3.rows[0].count;
+                // 请假
+                const sql5 = `select count(*) from t_student_details tsd where tsd.describes = '请假' and tsd.uid = $1 and date_trunc('second', tsd.times) >= $2 and date_trunc('second', tsd.times) <= $3`
+                const response4 = await db.query(sql5, [u.id, time11, time16])
+                const leave = response4.rows[0].count;
+                u.lack = lack;
+                u.leave = leave;
+            }
+
+        }
+
+        res.json({
+            status: 200,
+            message: "查询成功",
+            data: users,
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+}
 
 //格式化时间
 const formatDate = (date) => {
