@@ -3,6 +3,7 @@ const router = express.Router();
 
 const detailsHandler = require('../router_handler/details.js')
 
+router.get('/page/leave', detailsHandler.getLeave)
 router.get('/page/:id', detailsHandler.page)
 router.get('/list/:id/:sid', detailsHandler.list)
 router.post('/add', detailsHandler.add)
